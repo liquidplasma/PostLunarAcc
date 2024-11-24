@@ -1,0 +1,58 @@
+Items: {
+	HolyKnightRelic: {
+		DisplayName: Holy Knight Relic
+		Tooltip:
+			'''
+			Boosts stats: [c/32AD09:+200] health, [c/32AD09:+20] defense, and [c/32AD09:+10] life regeneration
+			Gain [c/32AD09:+25] defense for each alive ally on your team
+			After taking [c/EB3434:300] damage (pre-defense), [c/EB9234:retaliate] with [c/EB9234:3] spears, 
+			each dealing [c/EB3434:1500%] of the damage taken
+			'''
+	}
+
+	ManaCore: {
+		DisplayName: Mana Core
+		Tooltip:
+			'''
+			Converts all but [c/32AD09:20] mana into health
+			Grants bonuses based on the mana converted:
+			[c/32AD09:50%] as flat magic weapon damage
+			[c/32AD09:15%] as defense
+			[c/32AD09:8%] as life regeneration
+			[c/32AD09:Weapons no longer require mana]
+			'''
+	}
+
+	MoonFragment: {
+		DisplayName: Moon Fragment
+		Tooltip: ""
+	}
+
+	PaladinBar: {
+		DisplayName: Paladin Bar
+		Tooltip: ""
+	}
+
+	RangedLunar: {
+		DisplayName: God Eye
+		Tooltip:
+			'''
+			[c/327DFF:Lunar Item]
+			[c/EB9234:Ranged] attacks gain special effects:
+			Deal an extra hit for [c/EB3434:60%] of the original damage
+			Mark enemies, causing them to explode on death for [c/EB3434:400%] damage + [c/EB3434:15%] of their total health
+			Inflict an infinitely stacking debuff
+			'''
+	}
+
+	SoulbindingAmulet: {
+		DisplayName: Soulbinding Amulet
+		Tooltip: ""
+	}
+}
+
+Projectiles: {
+	HelperWraith.DisplayName: Helper Wraith
+	HelperWraithPellets.DisplayName: Helper Wraith Pellets
+	HelperWraithShot.DisplayName: Helper Wraith Shot
+}

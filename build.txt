@@ -1,0 +1,3 @@
+displayName = Lunar Accessories
+author = marvin
+version = 0.1

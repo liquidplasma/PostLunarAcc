@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Import tModLoader mod properties -->
+	<Import Project="..\tModLoader.targets" />
+
+	<!-- General -->
+	<PropertyGroup>
+		
+	</PropertyGroup>
+	<ItemGroup>
+	  <None Remove="Assets\marked.png" />
+	  <None Remove="Assets\marked_glow.png" />
+	  <None Remove="Items\Accessories\HolyKnightRelic.png" />
+	  <None Remove="Items\Accessories\ManaCore.png" />
+	  <None Remove="Items\Ingredients\MoonFragment.png" />
+	  <None Remove="Items\Ingredients\PaladinBar.png" />
+	</ItemGroup>
+
+	<!-- References -->
+
+</Project>
