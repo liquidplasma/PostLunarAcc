@@ -14,10 +14,12 @@ namespace PostLunarAcc
 {
     internal class PostLunarGlobalProjectile : GlobalProjectile
     {
-        public bool HolyKnightCounter;
+        public bool HolyKnightCounter = false;
 
         public float InitialVelocity;
-        Player Player(Projectile proj) => Main.player[proj.owner];
+
+        private Player Owner(Projectile proj) => Main.player[proj.owner];
+
         public override bool InstancePerEntity => true;
 
         public override void SetDefaults(Projectile entity)
@@ -63,14 +65,14 @@ namespace PostLunarAcc
         public override void AI(Projectile projectile)
         {
             if (projectile.type == ProjectileID.Daybreak && HolyKnightCounter && projectile.ai[1] <= 45f)
-            {                
+            {
                 Dust velocityTrail = Dust.NewDustPerfect(projectile.Center, DustID.SolarFlare);
                 velocityTrail.velocity = -projectile.velocity.RotatedByRandom(MathHelper.ToRadians(10)) * 0.2f;
                 velocityTrail.noGravity = true;
                 velocityTrail.shader = GameShaders.Armor.GetShaderFromItemId(ItemID.BrightGreenDye);
                 velocityTrail.scale = 1f;
 
-                NPC target = FindNearestNPC(Player(projectile).Center, 16 * 64, false);
+                NPC target = FindNearestNPC(Owner(projectile).Center, 16 * 64, false);
                 if (target != null && projectile.ai[0] != 1f)
                     projectile.SmoothHoming(target.Center, 2f, 16f);
             }
@@ -79,16 +81,15 @@ namespace PostLunarAcc
 
         public override void SendExtraAI(Projectile projectile, BitWriter bitWriter, BinaryWriter binaryWriter)
         {
-            if (projectile.type == ProjectileID.Daybreak && HolyKnightCounter)
-            {
+            if (projectile.type == ProjectileID.Daybreak)
                 bitWriter.WriteBit(HolyKnightCounter);
-            }
             base.SendExtraAI(projectile, bitWriter, binaryWriter);
         }
 
         public override void ReceiveExtraAI(Projectile projectile, BitReader bitReader, BinaryReader binaryReader)
         {
-            HolyKnightCounter = bitReader.ReadBit();
+            if (projectile.type == ProjectileID.Daybreak)
+                HolyKnightCounter = bitReader.ReadBit();
             base.ReceiveExtraAI(projectile, bitReader, binaryReader);
         }
     }

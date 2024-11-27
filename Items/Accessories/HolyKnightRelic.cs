@@ -71,6 +71,8 @@ namespace PostLunarAcc.Items.Accessories
 
         public int tankedDamage;
 
+        private Projectile Counter;
+
         public const int TANKMAX = 300;
 
         public override void ResetEffects()
@@ -91,30 +93,9 @@ namespace PostLunarAcc.Items.Accessories
 
         private void TankOthers(Player.HurtInfo info)
         {
-            bool reduceDamage = false;
-            Player equippedPlayer = null;
-            foreach (Player teamMate in Main.ActivePlayers)
-            {
-                if (teamMate.GetModPlayer<HolyKnightRelicPlayer>().active && teamMate.team == Player.team && Player != teamMate)
-                {
-                    reduceDamage = true;
-                    equippedPlayer = teamMate;
-                }
-            }
             if (active)
                 tankedDamage += info.SourceDamage;
-            if (equippedPlayer != null && !equippedPlayer.dead && reduceDamage)
-            {
-                info.Damage /= 2;
-                Player.HurtInfo hurtInfo = new()
-                {
-                    Damage = info.Damage /= 2,
-                    Dodgeable = true,
-                    Knockback = 0
-                };
-                equippedPlayer.Hurt(hurtInfo);
-            }
-            if (tankedDamage > TANKMAX)
+            if (active && tankedDamage > TANKMAX)
             {
                 tankedDamage = TANKMAX;
                 NPC target = FindNearestNPC(Player.Center, 16 * 64, false);
@@ -124,12 +105,16 @@ namespace PostLunarAcc.Items.Accessories
                     {
                         Vector2 position = Player.Center + new Vector2(0, -144) + Main.rand.NextVector2CircularEdge(128, 128);
                         int damage = (int)Player.GetTotalDamage(DamageClass.Melee).ApplyTo(info.SourceDamage * 15f);
-                        Projectile counter = Projectile.NewProjectileDirect(Player.GetSource_FromThis("HolyKnightCounter"), position, position.DirectionTo(target.Center) * 16f, ProjectileID.Daybreak, damage, 16f, Player.whoAmI);
-                        counter.CritChance += 80;
+                        if (Player.whoAmI == Main.myPlayer)
+                        {
+                            Counter = Projectile.NewProjectileDirect(Player.GetSource_FromThis("HolyKnightCounter"), position, position.DirectionTo(target.Center) * 16f, ProjectileID.Daybreak, damage, 16f, Player.whoAmI);
+                            Counter.CritChance += 80;
+                        }
+                        NetMessage.SendData(MessageID.SyncProjectile, number: Counter.identity);
                         for (int j = 1; j < 36; j++)
                         {
-                            Dust dusty = Dust.NewDustDirect(counter.Center, 0, 0, DustID.SolarFlare);
-                            dusty.velocity = Utils.RandomVector2(Main.rand, 1f, 1.5f).RotatedByRandom(MathHelper.ToRadians(360)) * Main.rand.NextFloat(2f, 6f);
+                            Dust dusty = Dust.NewDustDirect(Counter.Center, 0, 0, DustID.SolarFlare);
+                            dusty.velocity = Utils.RandomVector2(Main.rand, -2f, 2f).RotatedByRandom(MathHelper.ToRadians(360)) * Main.rand.NextFloat(2f, 6f);
                             dusty.noGravity = true;
                             dusty.scale = 3f;
                             dusty.shader = GameShaders.Armor.GetShaderFromItemId(ItemID.BrightGreenDye);

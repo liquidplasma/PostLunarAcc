@@ -82,7 +82,7 @@ namespace PostLunarAcc
             }
             if (soulboundActive && !npc.friendly)
             {
-                soulbouldRot += 0.033f;
+                soulbouldRot += 0.063f;
                 Vector2 position = npc.Center;
                 Main.EntitySpriteDraw(SoulBound,
                     position - Main.screenPosition,
@@ -90,7 +90,7 @@ namespace PostLunarAcc
                     Color.Wheat,
                     soulbouldRot,
                     SoulBound.Size() * 0.5f,
-                    1,
+                    npc.Size.Length() / 125f,
                     SpriteEffects.None,
                     0);
             }
@@ -99,18 +99,6 @@ namespace PostLunarAcc
 
         public override void DrawEffects(NPC npc, ref Color drawColor)
         {
-            if (soulboundActive && !npc.friendly)
-            {
-                Lighting.AddLight(npc.Center, Color.Cyan.ToVector3() * 0.67f);
-                for (int i = 0; i < 3; i++)
-                {
-                    Dust dusty = Dust.NewDustDirect(npc.position, npc.width, npc.height, DustID.Scorpion);
-                    dusty.velocity = Utils.RandomVector2(Main.rand, -1, 1);
-                    dusty.color = Color.Cyan;
-                    dusty.scale = 1.2f;
-                    dusty.noGravity = true;
-                }
-            }
             if (toExplode && !npc.friendly)
             {
                 Lighting.AddLight(npc.Center, Color.Red.ToVector3() * 0.33f);
@@ -127,43 +115,95 @@ namespace PostLunarAcc
 
         public override void OnKill(NPC npc)
         {
-            if (soulboundActive && !npc.friendly)
+            if (Main.netMode == NetmodeID.Server)
             {
-                if (LastHitterSoulbinding.whoAmI == Main.myPlayer)
-                    Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.position + npc.Size * Main.rand.NextFloat(), Vector2.UnitY * -2f, ModContent.ProjectileType<HelperWraithPellets>(), 0, 0, LastHitterSoulbinding.whoAmI);
-                soulboundActive = false;
-            }
-            if (toExplode && !npc.friendly)
-            {
-                NPC.HitInfo explodeDamage = new()
+                if (soulboundActive && !npc.friendly)
                 {
-                    Damage = npc.damage * 4 + (int)(npc.lifeMax * 0.15f),
-                    Knockback = 0,
-                    HideCombatText = true
-                };
-                foreach (NPC nearby in Main.ActiveNPCs)
-                {
-                    if (!nearby.friendly && nearby.whoAmI != npc.whoAmI && nearby.Distance(npc.Center) <= (npc.height + npc.width) * 2)
-                    {
-                        nearby.StrikeNPC(explodeDamage);
-                        ExtensionMethods.CreateCombatText(nearby, Color.Red, explodeDamage.Damage.ToString("0"));
-                        if (Main.netMode != NetmodeID.SinglePlayer)
-                            NetMessage.SendStrikeNPC(nearby, explodeDamage);
-                        LastHitterRangedLunar.addDPS(explodeDamage.Damage);
-                    }
+                    var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
+                    instance.Write((byte)PostLunarAcc.PacketType.SoulboundProjectile);
+                    instance.WriteVector2(npc.Center);
+                    instance.Write7BitEncodedInt(LastHitterSoulbinding.whoAmI);
+                    instance.Send();
+                    ExtensionMethods.Announce("Sent modpacket: " + instance.ToString());
+                    soulboundActive = false;
                 }
-                SoundEngine.PlaySound(SoundID.DD2_ExplosiveTrapExplode, npc.Center);
-                if (Main.myPlayer == LastHitterRangedLunar.whoAmI)
-                    Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.Center + new Vector2(0, -64), Vector2.Zero, ProjectileID.DD2ExplosiveTrapT3Explosion, 0, 0, LastHitterRangedLunar.whoAmI);
-                toExplode = false;
+                if (toExplode && !npc.friendly)
+                {
+                    var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
+                    NPC.HitInfo explodeDamage = new()
+                    {
+                        Damage = npc.damage * 4 + (int)(npc.lifeMax * 0.15f),
+                        Knockback = 0,
+                        HideCombatText = true
+                    };
+                    foreach (NPC nearby in Main.ActiveNPCs)
+                    {
+                        if (!nearby.friendly && nearby.whoAmI != npc.whoAmI && nearby.Distance(npc.Center) <= (npc.height + npc.width) * 2)
+                        {
+                            nearby.StrikeNPC(explodeDamage);
+                            ExtensionMethods.CreateCombatText(nearby, Color.Red, explodeDamage.Damage.ToString("0"));
+                            if (Main.netMode != NetmodeID.SinglePlayer)
+                                NetMessage.SendStrikeNPC(nearby, explodeDamage, LastHitterRangedLunar.whoAmI);
+                            LastHitterRangedLunar.addDPS(explodeDamage.Damage);
+                        }
+                    }
+                    instance.Write((byte)PostLunarAcc.PacketType.RangedLunarExplosion);
+                    instance.WriteVector2(npc.Center);
+                    instance.Write(LastHitterRangedLunar.whoAmI);
+                    instance.Send();
+                    ExtensionMethods.Announce("Sent modpacket: " + instance.ToString());
+                    toExplode = false;
+                }
+            }
+            else
+            {
+                if (soulboundActive && !npc.friendly)
+                {
+                    if (Main.netMode != NetmodeID.MultiplayerClient)
+                        Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.position + npc.Size * Main.rand.NextFloat(), Vector2.UnitY * -2f, ModContent.ProjectileType<HelperWraithPellets>(), 0, 0, LastHitterSoulbinding.whoAmI);
+                    soulboundActive = false;
+                }
+                if (toExplode && !npc.friendly)
+                {
+                    NPC.HitInfo explodeDamage = new()
+                    {
+                        Damage = npc.damage * 4 + (int)(npc.lifeMax * 0.15f),
+                        Knockback = 0,
+                        HideCombatText = true
+                    };
+                    foreach (NPC nearby in Main.ActiveNPCs)
+                    {
+                        if (!nearby.friendly && nearby.whoAmI != npc.whoAmI && nearby.Distance(npc.Center) <= (npc.height + npc.width) * 2)
+                        {
+                            nearby.StrikeNPC(explodeDamage);
+                            ExtensionMethods.CreateCombatText(nearby, Color.Red, explodeDamage.Damage.ToString("0"));
+                            if (Main.netMode != NetmodeID.SinglePlayer)
+                                NetMessage.SendStrikeNPC(nearby, explodeDamage, LastHitterRangedLunar.whoAmI);
+                            LastHitterRangedLunar.addDPS(explodeDamage.Damage);
+                        }
+                    }
+                    Vector2 position = npc.Center;
+                    SoundEngine.PlaySound(SoundID.DD2_ExplosiveTrapExplode, position);
+                    if (Main.netMode != NetmodeID.MultiplayerClient)
+                        Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.Center + new Vector2(0, -64), Vector2.Zero, ProjectileID.DD2ExplosiveTrapT3Explosion, 0, 0, LastHitterRangedLunar.whoAmI);
+                    toExplode = false;
+                }
             }
             base.OnKill(npc);
         }
 
         public override void ModifyNPCLoot(NPC npc, NPCLoot npcLoot)
         {
-            if (npc.type == NPCID.MoonLordCore)
-                npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<MoonFragment>(), 1, 16, 32));
+            switch (npc.type)
+            {
+                case NPCID.MoonLordCore:
+                    npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<MoonFragment>(), 1, 16, 32));
+                    break;
+
+                case NPCID.Paladin:
+                    npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<PaladinBar>(), 1, 20, 40));
+                    break;
+            }
             base.ModifyNPCLoot(npc, npcLoot);
         }
     }

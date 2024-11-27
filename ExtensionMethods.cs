@@ -8,6 +8,7 @@ using Terraria.Audio;
 using Terraria.Chat;
 using Terraria.DataStructures;
 using Terraria.GameContent;
+using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
@@ -135,6 +136,17 @@ namespace PostLunarAcc
                     rotation += angleFloat;
                 Player.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, rotation);
                 return -1;
+            }
+        }
+
+        public static bool ShiftDown
+        {
+            get
+            {
+                // Shamelessly taken from https://github.com/SamsonAllen13/ClickerClass/blob/master/Items/ClickerItemCore.cs#L266
+                var keys = PlayerInput.CurrentProfile.InputModes[InputMode.Keyboard].KeyStatus[TriggerNames.SmartSelect];
+                string key = keys.Count == 0 ? null : keys[0];
+                return key == null || PlayerInput.Triggers.Current.SmartSelect;
             }
         }
 
@@ -432,7 +444,7 @@ namespace PostLunarAcc
         /// <summary> Checks if the NPC is NOT active or is friendly. If true kill this projectile else set it's timeleft to 2. (Projectile is alive as long as NPC is alive). Good for chasing AI. </summary>>
         public static void CheckAliveNPCProj(this Projectile proj, NPC target)
         {
-            if (!target.active || target.friendly)
+            if (target == null || !target.active || target.friendly)
                 proj.Kill();
             else
                 proj.timeLeft = 2;

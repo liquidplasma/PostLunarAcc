@@ -80,7 +80,7 @@ namespace PostLunarAcc
         }
 
         /// <summary>
-        /// Returns the index of a nearby NPC
+        /// Returns a nearby NPC
         /// </summary>
         /// <param name="pos">The center position</param>
         /// <param name="dist">The distance</param>
@@ -104,7 +104,6 @@ namespace PostLunarAcc
                     selectedNPC = target;
                     shortestDistance = distance;
                 }
-
             }
 
             return selectedNPC;

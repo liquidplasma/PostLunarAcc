@@ -1,9 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
+using PostLunarAcc.Debuffs;
 using PostLunarAcc.Items.Ingredients;
 using PostLunarAcc.Rarity;
 using Terraria;
-using Terraria.Audio;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -22,8 +21,8 @@ namespace PostLunarAcc.Items.Accessories
         {
             if (active && hit.DamageType.CountsAsClass(DamageClass.Ranged))
             {
+                target.AddBuff(ModContent.BuffType<Stacking>(), int.MaxValue);
                 target.GetGlobalNPC<PostLunarGlobalNPC>().LastHitterRangedLunar = Main.player[proj.owner];
-                target.GetGlobalNPC<PostLunarGlobalNPC>().toExplode = true;
                 target.GetGlobalNPC<PostLunarGlobalNPC>().timesHit++;
                 target.GetGlobalNPC<PostLunarGlobalNPC>().debuffCooldown = 240;
                 target.GetGlobalNPC<PostLunarGlobalNPC>().coolDownLimit = 15;

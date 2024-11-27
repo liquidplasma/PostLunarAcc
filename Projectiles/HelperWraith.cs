@@ -1,6 +1,7 @@
 ﻿using Humanizer;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PostLunarAcc.Debuffs;
 using ReLogic.Content;
 using System.Collections.Generic;
 using Terraria;
@@ -17,7 +18,11 @@ namespace PostLunarAcc.Projectiles
 
         public Projectile WraithInstance;
 
+        public Item SoulboundItemInstance;
+
         public List<NPC> SoulboundNPCs = [];
+
+        public int SoulsConsumed;
 
         public override void ResetEffects()
         {
@@ -29,7 +34,7 @@ namespace PostLunarAcc.Projectiles
         {
             if (soulbindingActive && WraithInstance != null && (proj.DamageType == DamageClass.Summon || proj.DamageType == DamageClass.SummonMeleeSpeed))
             {
-                target.GetGlobalNPC<PostLunarGlobalNPC>().soulboundActive = true;
+                target.AddBuff(ModContent.BuffType<Soulbound>(), int.MaxValue);
                 target.GetGlobalNPC<PostLunarGlobalNPC>().LastHitterSoulbinding = Player;
                 if (!SoulboundNPCs.Contains(target))
                     SoulboundNPCs.Add(target);
@@ -41,7 +46,7 @@ namespace PostLunarAcc.Projectiles
         {
             if (soulbindingActive && WraithInstance != null && (item.DamageType == DamageClass.Summon || item.DamageType == DamageClass.SummonMeleeSpeed))
             {
-                target.GetGlobalNPC<PostLunarGlobalNPC>().soulboundActive = true;
+                target.AddBuff(ModContent.BuffType<Soulbound>(), int.MaxValue);
                 target.GetGlobalNPC<PostLunarGlobalNPC>().LastHitterSoulbinding = Player;
                 if (!SoulboundNPCs.Contains(target))
                     SoulboundNPCs.Add(target);
@@ -80,7 +85,8 @@ namespace PostLunarAcc.Projectiles
         public override void AI()
         {
             AttackTimer++;
-            TrackStats.soulbindingActive = true;
+            if (!TrackStats.soulbindingActive)
+                Projectile.Kill();
             TrackStats.WraithInstance = Projectile;
             Projectile.KeepAliveIfOwnerIsAlive(Player);
             Projectile.spriteDirection = Player.direction;
@@ -94,6 +100,8 @@ namespace PostLunarAcc.Projectiles
             if (healDelay > 0)
             {
                 Player.Heal(20);
+                if (TrackStats.SoulsConsumed < 100)
+                    TrackStats.SoulsConsumed++;
                 healDelay--;
             }
             Projectile.Animate(12);
@@ -105,8 +113,9 @@ namespace PostLunarAcc.Projectiles
                     {
                         if (Player.whoAmI == Main.myPlayer)
                         {
-                            Projectile proj = Projectile.NewProjectileDirect(Projectile.GetSource_FromThis(), Projectile.Center, Utils.RandomVector2(Main.rand, -8f, 8f), ModContent.ProjectileType<HelperWraithShot>(), (int)(Projectile.damage * 0.8f), 4f);
-                            proj.ai[0] = target.whoAmI;
+                            int damage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(TrackStats.SoulboundItemInstance.damage);
+                            Vector2 position = Projectile.position + Projectile.Size * Main.rand.NextFloat();
+                            Projectile proj = Projectile.NewProjectileDirect(Projectile.GetSource_FromThis(), position, Utils.RandomVector2(Main.rand, -8f, 8f), ModContent.ProjectileType<HelperWraithShot>(), (int)(damage * (0.75f + TrackStats.SoulsConsumed / 50f)), 4f, ai0: target.whoAmI);
                         }
                     }
                 }
@@ -118,6 +127,8 @@ namespace PostLunarAcc.Projectiles
 
     public class HelperWraithPellets : ModProjectileImproved
     {
+        public List<Vector2> OldPositions = new List<Vector2>();
+
         public override void SetStaticDefaults()
         {
             Main.projFrames[Type] = 7;
@@ -131,7 +142,7 @@ namespace PostLunarAcc.Projectiles
             Projectile.usesLocalNPCImmunity = true;
             Projectile.localNPCHitCooldown = -1;
             Projectile.tileCollide = false;
-            Projectile.extraUpdates += 1;
+            Projectile.extraUpdates += 2;
             base.SetDefaults();
         }
 
@@ -143,12 +154,24 @@ namespace PostLunarAcc.Projectiles
 
         public override void AI()
         {
+            if (!TrackStats.soulbindingActive)
+                Projectile.Kill();
+            Lighting.AddLight(Projectile.Center, Color.Wheat.ToVector3() * 0.5f);
             Projectile.ai[0]++;
+            if (Projectile.ai[0] % 4 == 0)
+                OldPositions.Add(Projectile.position);
+            if (OldPositions.Count > 6)
+                OldPositions.RemoveAt(0);
+
             Projectile.velocity *= 0.99f;
-            Dust dusty = Dust.NewDustDirect(Projectile.position, Projectile.width, Projectile.height, DustID.Scorpion);
-            dusty.velocity = Projectile.rotation.ToRotationVector2() * 0.1f;
-            dusty.noGravity = true;
-            if (TrackStats.WraithInstance != null && TrackStats.WraithInstance.active && Projectile.ai[0] >= 180 && TrackStats.WraithInstance.ModProjectile is HelperWraith healMe)
+            if (OldPositions.Count > 0 && Projectile.ai[0] % 6 == 0)
+            {
+                Dust dusty = Dust.NewDustDirect(OldPositions[0], Projectile.width, Projectile.height, DustID.LastPrism);
+                dusty.velocity = Projectile.rotation.ToRotationVector2() * 0.1f;
+                dusty.noGravity = true;
+                dusty.color = Color.Blue;
+            }
+            if (TrackStats.WraithInstance != null && TrackStats.WraithInstance.active && Projectile.ai[0] >= 240 && TrackStats.WraithInstance.ModProjectile is HelperWraith healMe)
             {
                 Projectile.SmoothHoming(TrackStats.WraithInstance.Center, 1f, 16f);
                 if (Projectile.Hitbox.Intersects(TrackStats.WraithInstance.Hitbox))
@@ -176,22 +199,23 @@ namespace PostLunarAcc.Projectiles
         }
 
         private ref float Timer => ref Projectile.ai[1];
+        private Color usedColor = Color.White;
 
         public override void SetStaticDefaults()
         {
-            ProjectileID.Sets.TrailCacheLength[Type] = 20;
+            ProjectileID.Sets.TrailCacheLength[Type] = 100;
             ProjectileID.Sets.TrailingMode[Type] = 3;
             base.SetStaticDefaults();
         }
 
         public override void SetDefaults()
         {
-            Projectile.width = Projectile.height = ContentSamples.ProjectilesByType[ProjectileID.Bullet].width;
+            Projectile.width = Projectile.height = 4;
             Projectile.DamageType = DamageClass.Summon;
             Projectile.usesLocalNPCImmunity = true;
             Projectile.localNPCHitCooldown = -1;
             Projectile.tileCollide = false;
-            Projectile.extraUpdates += 1;
+            Projectile.extraUpdates += 4;
             Projectile.alpha = 255;
             base.SetDefaults();
         }
@@ -203,17 +227,18 @@ namespace PostLunarAcc.Projectiles
 
         public override bool PreDraw(ref Color lightColor)
         {
-            DrawTrail();
+            if (usedColor == Color.White)
+                usedColor = Utils.SelectRandom(Main.rand, Color.Red, Color.Blue, Color.Green, Color.Yellow, Color.OrangeRed, Color.YellowGreen, Color.Violet, Color.Lime, Color.Magenta, Color.Pink, Color.DeepPink, Color.Purple);
+            DrawTrail(usedColor);
             return base.PreDraw(ref lightColor);
         }
 
         public override void AI()
         {
             Timer++;
+            Projectile.CheckAliveNPCProj(Target);
             if (Timer >= 60 && Target != null && Target.active)
-            {
-                Projectile.SmoothHoming(Target.Center, 8f, 16f);
-            }
+                Projectile.SmoothHoming(Target.Center, 1f, 16f, Target.velocity);
             base.AI();
         }
     }
