@@ -87,11 +87,11 @@ namespace PostLunarAcc.Items.Accessories
 
         public override void OnHurt(Player.HurtInfo info)
         {
-            TankOthers(info);
+            TankDamage(info);
             base.OnHurt(info);
         }
 
-        private void TankOthers(Player.HurtInfo info)
+        private void TankDamage(Player.HurtInfo info)
         {
             if (active)
                 tankedDamage += info.SourceDamage;
@@ -109,15 +109,14 @@ namespace PostLunarAcc.Items.Accessories
                         {
                             Counter = Projectile.NewProjectileDirect(Player.GetSource_FromThis("HolyKnightCounter"), position, position.DirectionTo(target.Center) * 16f, ProjectileID.Daybreak, damage, 16f, Player.whoAmI);
                             Counter.CritChance += 80;
-                        }
-                        NetMessage.SendData(MessageID.SyncProjectile, number: Counter.identity);
-                        for (int j = 1; j < 36; j++)
-                        {
-                            Dust dusty = Dust.NewDustDirect(Counter.Center, 0, 0, DustID.SolarFlare);
-                            dusty.velocity = Utils.RandomVector2(Main.rand, -2f, 2f).RotatedByRandom(MathHelper.ToRadians(360)) * Main.rand.NextFloat(2f, 6f);
-                            dusty.noGravity = true;
-                            dusty.scale = 3f;
-                            dusty.shader = GameShaders.Armor.GetShaderFromItemId(ItemID.BrightGreenDye);
+                            for (int j = 1; j < 36; j++)
+                            {
+                                Dust dusty = Dust.NewDustDirect(Counter.Center, 0, 0, DustID.SolarFlare);
+                                dusty.velocity = Utils.RandomVector2(Main.rand, -2f, 2f).RotatedByRandom(MathHelper.ToRadians(360)) * Main.rand.NextFloat(2f, 6f);
+                                dusty.noGravity = true;
+                                dusty.scale = 3f;
+                                dusty.shader = GameShaders.Armor.GetShaderFromItemId(ItemID.BrightGreenDye);
+                            }
                         }
                     }
                     for (int i = 1; i < 36; i++)
@@ -141,7 +140,6 @@ namespace PostLunarAcc.Items.Accessories
 
         public override void SetStaticDefaults()
         {
-            ItemID.Sets.ItemIconPulse[Item.type] = true;
             ItemID.Sets.ItemNoGravity[Item.type] = true;
         }
 

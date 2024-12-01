@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PostLunarAcc.Items.Accessories;
 using PostLunarAcc.Items.Ingredients;
 using PostLunarAcc.Projectiles;
 using ReLogic.Graphics;
@@ -25,11 +26,6 @@ namespace PostLunarAcc
         /// </summary>
         public Player LastHitterRangedLunar { get; set; }
 
-        /// <summary>
-        /// Player who hit a NPC last for soulbinding
-        /// </summary>
-        public Player LastHitterSoulbinding { get; set; }
-
         private Texture2D Marked => ModContent.Request<Texture2D>("PostLunarAcc/Assets/marked", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value;
         private Texture2D SoulBound => ModContent.Request<Texture2D>("PostLunarAcc/Assets/SoulBound", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value;
 
@@ -39,8 +35,8 @@ namespace PostLunarAcc
         {
             if (toExplode && timesHit > 0)
             {
-                damage = timesHit * 13;
-                npc.lifeRegen -= timesHit * 52;
+                damage = timesHit * 6;
+                npc.lifeRegen -= timesHit * 24;
                 if (debuffCooldown > 0)
                     debuffCooldown--;
             }
@@ -101,7 +97,7 @@ namespace PostLunarAcc
         {
             if (toExplode && !npc.friendly)
             {
-                Lighting.AddLight(npc.Center, Color.Red.ToVector3() * 0.33f);
+                Lighting.AddLight(npc.Center, Color.DarkRed.ToVector3() * 0.5f);
                 for (int i = 0; i < 3; i++)
                 {
                     Dust dusty = Dust.NewDustDirect(npc.position, npc.width, npc.height, DustID.Scorpion);
@@ -111,23 +107,25 @@ namespace PostLunarAcc
                     dusty.noGravity = true;
                 }
             }
+            if (soulboundActive && !npc.friendly)
+                Lighting.AddLight(npc.Center, Color.FloralWhite.ToVector3() * 0.5f);
         }
 
         public override void OnKill(NPC npc)
         {
             if (Main.netMode == NetmodeID.Server)
             {
-                if (soulboundActive && !npc.friendly)
+                Player Player = Main.player[npc.lastInteraction];
+                if (Player != null && Player.GetModPlayer<HelperWraithTracking>().soulbindingActive && soulboundActive && npc.CanBeChasedBy())
                 {
+                    soulboundActive = false;
                     var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
                     instance.Write((byte)PostLunarAcc.PacketType.SoulboundProjectile);
-                    instance.WriteVector2(npc.Center);
-                    instance.Write7BitEncodedInt(LastHitterSoulbinding.whoAmI);
+                    instance.Write7BitEncodedInt(npc.whoAmI);
+                    instance.Write7BitEncodedInt(Player.whoAmI);
                     instance.Send();
-                    ExtensionMethods.Announce("Sent modpacket: " + instance.ToString());
-                    soulboundActive = false;
                 }
-                if (toExplode && !npc.friendly)
+                if (Player != null && Player.GetModPlayer<RangerLunarModplayer>().active && toExplode && npc.CanBeChasedBy())
                 {
                     var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
                     NPC.HitInfo explodeDamage = new()
@@ -143,27 +141,29 @@ namespace PostLunarAcc
                             nearby.StrikeNPC(explodeDamage);
                             ExtensionMethods.CreateCombatText(nearby, Color.Red, explodeDamage.Damage.ToString("0"));
                             if (Main.netMode != NetmodeID.SinglePlayer)
-                                NetMessage.SendStrikeNPC(nearby, explodeDamage, LastHitterRangedLunar.whoAmI);
-                            LastHitterRangedLunar.addDPS(explodeDamage.Damage);
+                                NetMessage.SendStrikeNPC(nearby, explodeDamage);
+                            Player.addDPS(explodeDamage.Damage);
                         }
                     }
                     instance.Write((byte)PostLunarAcc.PacketType.RangedLunarExplosion);
-                    instance.WriteVector2(npc.Center);
-                    instance.Write(LastHitterRangedLunar.whoAmI);
+                    instance.Write7BitEncodedInt(npc.whoAmI);
+                    instance.Write7BitEncodedInt(Player.whoAmI);
                     instance.Send();
-                    ExtensionMethods.Announce("Sent modpacket: " + instance.ToString());
                     toExplode = false;
                 }
+                return;
             }
             else
             {
-                if (soulboundActive && !npc.friendly)
+                Player Player = Main.player[npc.lastInteraction];
+                if (Player != null && Player.GetModPlayer<HelperWraithTracking>().soulbindingActive && soulboundActive && npc.CanBeChasedBy())
                 {
                     if (Main.netMode != NetmodeID.MultiplayerClient)
-                        Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.position + npc.Size * Main.rand.NextFloat(), Vector2.UnitY * -2f, ModContent.ProjectileType<HelperWraithPellets>(), 0, 0, LastHitterSoulbinding.whoAmI);
+                        Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.position + npc.Size * Main.rand.NextFloat(), Vector2.UnitY * -2f, ModContent.ProjectileType<HelperWraithPellets>(), 0, 0, Player.whoAmI);
+                    Player.GetModPlayer<HelperWraithTracking>().SoulboundNPCs.Remove(npc);
                     soulboundActive = false;
                 }
-                if (toExplode && !npc.friendly)
+                if (Player != null && toExplode && npc.CanBeChasedBy())
                 {
                     NPC.HitInfo explodeDamage = new()
                     {
@@ -178,18 +178,18 @@ namespace PostLunarAcc
                             nearby.StrikeNPC(explodeDamage);
                             ExtensionMethods.CreateCombatText(nearby, Color.Red, explodeDamage.Damage.ToString("0"));
                             if (Main.netMode != NetmodeID.SinglePlayer)
-                                NetMessage.SendStrikeNPC(nearby, explodeDamage, LastHitterRangedLunar.whoAmI);
-                            LastHitterRangedLunar.addDPS(explodeDamage.Damage);
+                                NetMessage.SendStrikeNPC(nearby, explodeDamage, Player.whoAmI);
+                            Player.addDPS(explodeDamage.Damage);
                         }
                     }
                     Vector2 position = npc.Center;
                     SoundEngine.PlaySound(SoundID.DD2_ExplosiveTrapExplode, position);
                     if (Main.netMode != NetmodeID.MultiplayerClient)
-                        Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.Center + new Vector2(0, -64), Vector2.Zero, ProjectileID.DD2ExplosiveTrapT3Explosion, 0, 0, LastHitterRangedLunar.whoAmI);
+                        Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.Center + new Vector2(0, -64), Vector2.Zero, ProjectileID.DD2ExplosiveTrapT3Explosion, 0, 0, Player.whoAmI);
                     toExplode = false;
                 }
+                return;
             }
-            base.OnKill(npc);
         }
 
         public override void ModifyNPCLoot(NPC npc, NPCLoot npcLoot)
@@ -197,7 +197,7 @@ namespace PostLunarAcc
             switch (npc.type)
             {
                 case NPCID.MoonLordCore:
-                    npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<MoonFragment>(), 1, 16, 32));
+                    npcLoot.Add(ItemDropRule.ByCondition(new Conditions.NotExpert(), ModContent.ItemType<MoonFragment>(), 1, 16, 32));
                     break;
 
                 case NPCID.Paladin:

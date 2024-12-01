@@ -1,10 +1,8 @@
-﻿using Humanizer;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using PostLunarAcc.Debuffs;
-using ReLogic.Content;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.GameContent;
 using Terraria.ID;
@@ -34,8 +32,15 @@ namespace PostLunarAcc.Projectiles
         {
             if (soulbindingActive && WraithInstance != null && (proj.DamageType == DamageClass.Summon || proj.DamageType == DamageClass.SummonMeleeSpeed))
             {
-                target.AddBuff(ModContent.BuffType<Soulbound>(), int.MaxValue);
-                target.GetGlobalNPC<PostLunarGlobalNPC>().LastHitterSoulbinding = Player;
+                if (Main.netMode == NetmodeID.MultiplayerClient)
+                {
+                    var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
+                    instance.Write((byte)PostLunarAcc.PacketType.SoulboundActivationServer);
+                    instance.Write7BitEncodedInt(target.whoAmI);
+                    instance.Write7BitEncodedInt(Player.whoAmI);
+                    instance.Send();
+                }
+                target.GetGlobalNPC<PostLunarGlobalNPC>().soulboundActive = true;
                 if (!SoulboundNPCs.Contains(target))
                     SoulboundNPCs.Add(target);
             }
@@ -46,12 +51,24 @@ namespace PostLunarAcc.Projectiles
         {
             if (soulbindingActive && WraithInstance != null && (item.DamageType == DamageClass.Summon || item.DamageType == DamageClass.SummonMeleeSpeed))
             {
-                target.AddBuff(ModContent.BuffType<Soulbound>(), int.MaxValue);
-                target.GetGlobalNPC<PostLunarGlobalNPC>().LastHitterSoulbinding = Player;
+                if (Main.netMode == NetmodeID.MultiplayerClient)
+                {
+                    var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
+                    instance.Write((byte)PostLunarAcc.PacketType.SoulboundActivationServer);
+                    instance.Write7BitEncodedInt(target.whoAmI);
+                    instance.Write7BitEncodedInt(Player.whoAmI);
+                    instance.Send();
+                }
+                target.GetGlobalNPC<PostLunarGlobalNPC>().soulboundActive = true;
                 if (!SoulboundNPCs.Contains(target))
                     SoulboundNPCs.Add(target);
             }
             base.OnHitNPCWithItem(item, target, hit, damageDone);
+        }
+
+        public override void UpdateDead()
+        {
+            SoulsConsumed = 0;
         }
     }
 
@@ -60,9 +77,12 @@ namespace PostLunarAcc.Projectiles
         public int healDelay;
 
         private ref float AttackTimer => ref Projectile.ai[0];
+        private float initialScale = 1.0f;
 
         public override void SetStaticDefaults()
         {
+            ProjectileID.Sets.TrailCacheLength[Type] = 10;
+            ProjectileID.Sets.TrailingMode[Type] = 3;
             Main.projFrames[Type] = 4;
             base.SetStaticDefaults();
         }
@@ -82,6 +102,32 @@ namespace PostLunarAcc.Projectiles
             return false;
         }
 
+        public override bool PreDraw(ref Color lightColor)
+        {
+            for (int i = 0; i < Projectile.oldPos.Length; i++)
+            {
+                float scale = initialScale * (1f - (i / (float)Projectile.oldPos.Length));
+                float alpha = 1f - (i / (float)Projectile.oldPos.Length);
+                Texture2D texture = TextureAssets.Projectile[Type].Value;
+                Color color = lightColor * alpha;
+                Rectangle frame = texture.Frame(verticalFrames: Main.projFrames[Type], frameY: Projectile.frame);
+                Vector2 drawOrigin = frame.Size() / 2;
+                Vector2 drawPos = Projectile.oldPos[i] + drawOrigin + new Vector2(0f, Projectile.gfxOffY);
+                ExtensionMethods.BetterEntityDraw(
+                    texture,
+                    drawPos,
+                    frame,
+                    color,
+                    0f,
+                    frame.Size() / 2,
+                    scale,
+                    Projectile.spriteDirection == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None,
+                    0f
+                );
+            }
+            return base.PreDraw(ref lightColor);
+        }
+
         public override void AI()
         {
             AttackTimer++;
@@ -97,16 +143,19 @@ namespace PostLunarAcc.Projectiles
                 restSpot = Player.Center - new Vector2(-32, 32);
 
             Projectile.SmoothHoming(restSpot, 1f, 16f);
+            if (Projectile.Center.Distance(Player.Center) >= 16 * 60)
+                Projectile.TeleportTo(Player, restSpot, DustID.Scorpion);
             if (healDelay > 0)
             {
                 Player.Heal(20);
-                if (TrackStats.SoulsConsumed < 100)
+                if (TrackStats.SoulsConsumed < 200)
                     TrackStats.SoulsConsumed++;
                 healDelay--;
             }
             Projectile.Animate(12);
             if (AttackTimer > 60)
             {
+                bool attacked = false;
                 foreach (NPC target in TrackStats.SoulboundNPCs)
                 {
                     if (target != null && target.active)
@@ -115,9 +164,17 @@ namespace PostLunarAcc.Projectiles
                         {
                             int damage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(TrackStats.SoulboundItemInstance.damage);
                             Vector2 position = Projectile.position + Projectile.Size * Main.rand.NextFloat();
-                            Projectile proj = Projectile.NewProjectileDirect(Projectile.GetSource_FromThis(), position, Utils.RandomVector2(Main.rand, -8f, 8f), ModContent.ProjectileType<HelperWraithShot>(), (int)(damage * (0.75f + TrackStats.SoulsConsumed / 50f)), 4f, ai0: target.whoAmI);
+                            Vector2 velocity = Projectile.Center.DirectionFrom(target.Center).RotatedByRandom(MathHelper.ToRadians(60)) * 5f;
+                            Projectile proj = Projectile.NewProjectileDirect(Projectile.GetSource_FromThis(), position, velocity, ModContent.ProjectileType<HelperWraithShot>(), (int)(damage * (0.75f + TrackStats.SoulsConsumed / 50f)), 4f, ai0: target.whoAmI);
                         }
+                        attacked = true;
                     }
+                }
+                if (attacked)
+                {
+                    Projectile.velocity += Utils.RandomVector2(Main.rand, -4, 4);
+                    SoundEngine.PlaySound(SoundID.Item8, Projectile.Center);
+                    Projectile.netUpdate = true;
                 }
                 AttackTimer = 0;
             }
@@ -127,7 +184,7 @@ namespace PostLunarAcc.Projectiles
 
     public class HelperWraithPellets : ModProjectileImproved
     {
-        public List<Vector2> OldPositions = new List<Vector2>();
+        public List<Vector2> OldPositions = [];
 
         public override void SetStaticDefaults()
         {
@@ -217,12 +274,24 @@ namespace PostLunarAcc.Projectiles
             Projectile.tileCollide = false;
             Projectile.extraUpdates += 4;
             Projectile.alpha = 255;
+            Projectile.timeLeft = 300;
+            Projectile.penetrate = 2;
             base.SetDefaults();
         }
 
         public override bool? CanHitNPC(NPC target)
         {
             return Target != null && Target == target;
+        }
+
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
+        {
+            if (Target != null && Target == target)
+            {
+                Projectile.velocity = Vector2.Zero;
+                Projectile.timeLeft = 75;
+                Projectile.netUpdate = true;
+            }
         }
 
         public override bool PreDraw(ref Color lightColor)
@@ -233,13 +302,31 @@ namespace PostLunarAcc.Projectiles
             return base.PreDraw(ref lightColor);
         }
 
+        public override bool PreAI()
+        {
+            if (!Target.active)
+                Projectile.Kill();
+            return base.PreAI();
+        }
+
         public override void AI()
         {
+            if (usedColor != Color.White)
+                Lighting.AddLight(Projectile.Center, usedColor.ToVector3() * 0.25f);
             Timer++;
-            Projectile.CheckAliveNPCProj(Target);
             if (Timer >= 60 && Target != null && Target.active)
                 Projectile.SmoothHoming(Target.Center, 1f, 16f, Target.velocity);
             base.AI();
+        }
+
+        public override bool PreKill(int timeLeft)
+        {
+            return base.PreKill(timeLeft);
+        }
+
+        public override void OnKill(int timeLeft)
+        {
+            base.OnKill(timeLeft);
         }
     }
 }

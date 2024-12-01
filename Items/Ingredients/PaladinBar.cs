@@ -14,5 +14,17 @@ namespace PostLunarAcc.Items.Ingredients
             Item.value = 10000;
             Item.rare = ItemRarityID.Cyan;
         }
+
+        public override void AddRecipes()
+        {
+            Recipe.Create(ItemID.PaladinsHammer)
+                .AddIngredient(Type, 10)
+                .AddTile(TileID.MythrilAnvil)
+                .Register();
+            Recipe.Create(ItemID.PaladinsShield)
+                .AddIngredient(Type, 10)
+                .AddTile(TileID.MythrilAnvil)
+                .Register();
+        }
     }
 }

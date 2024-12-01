@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using PostLunarAcc.Items.Accessories;
 using System.IO;
 using Terraria;
 using Terraria.DataStructures;

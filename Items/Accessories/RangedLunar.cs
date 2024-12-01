@@ -1,5 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using PostLunarAcc.Debuffs;
 using PostLunarAcc.Items.Ingredients;
 using PostLunarAcc.Rarity;
 using Terraria;
@@ -21,8 +20,15 @@ namespace PostLunarAcc.Items.Accessories
         {
             if (active && hit.DamageType.CountsAsClass(DamageClass.Ranged))
             {
-                target.AddBuff(ModContent.BuffType<Stacking>(), int.MaxValue);
-                target.GetGlobalNPC<PostLunarGlobalNPC>().LastHitterRangedLunar = Main.player[proj.owner];
+                if (Main.netMode == NetmodeID.MultiplayerClient)
+                {
+                    var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
+                    instance.Write((byte)PostLunarAcc.PacketType.RangedLunarStacksToServer);
+                    instance.Write7BitEncodedInt(target.whoAmI);
+                    instance.Write7BitEncodedInt(proj.owner);
+                    instance.Send();
+                }
+                target.GetGlobalNPC<PostLunarGlobalNPC>().toExplode = true;
                 target.GetGlobalNPC<PostLunarGlobalNPC>().timesHit++;
                 target.GetGlobalNPC<PostLunarGlobalNPC>().debuffCooldown = 240;
                 target.GetGlobalNPC<PostLunarGlobalNPC>().coolDownLimit = 15;
@@ -58,7 +64,6 @@ namespace PostLunarAcc.Items.Accessories
     {
         public override void SetStaticDefaults()
         {
-            ItemID.Sets.ItemIconPulse[Item.type] = true;
             ItemID.Sets.ItemNoGravity[Item.type] = true;
         }
 

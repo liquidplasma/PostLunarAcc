@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using PostLunarAcc.Items.Ingredients;
 using PostLunarAcc.Projectiles;
 using PostLunarAcc.Rarity;
 using System.Collections.Generic;
@@ -21,7 +22,6 @@ namespace PostLunarAcc.Items.Accessories
             Souls = this.GetLocalization("SoulsConsumed");
             TooltipSmall = this.GetLocalization("TooltipSmall");
             TooltipBig = this.GetLocalization("TooltipBig");
-            ItemID.Sets.ItemIconPulse[Item.type] = true;
             ItemID.Sets.ItemNoGravity[Item.type] = true;
         }
 
@@ -42,7 +42,8 @@ namespace PostLunarAcc.Items.Accessories
             if (player.ownedProjectileCounts[ModContent.ProjectileType<HelperWraith>()] == 0)
                 Projectile.NewProjectile(player.GetSource_Accessory(Item), player.Center, Vector2.Zero, ModContent.ProjectileType<HelperWraith>(), (int)player.GetTotalDamage(DamageClass.Summon).ApplyTo(Item.damage), 0, player.whoAmI);
             player.GetModPlayer<HelperWraithTracking>().SoulboundItemInstance = Item;
-            player.maxMinions += 4;
+            player.maxMinions += 3;
+            player.GetDamage(DamageClass.Summon) += 0.25f;
             player.whipRangeMultiplier += 0.25f;
             player.autoReuseGlove = true;
             player.GetModPlayer<HelperWraithTracking>().soulbindingActive = true;
@@ -63,6 +64,16 @@ namespace PostLunarAcc.Items.Accessories
             }
             TooltipLine descriptionSmall = new(Mod, "DescriptionSmall", TooltipSmall.Value);
             tooltips.Add(descriptionSmall);
+        }
+
+        public override void AddRecipes()
+        {
+            CreateRecipe()
+                .AddIngredient(ItemID.PapyrusScarab)
+                .AddIngredient(ItemID.PygmyNecklace)
+                .AddIngredient(ModContent.ItemType<MoonFragment>(), 16)
+                .AddTile(TileID.LunarCraftingStation)
+                .Register();
         }
     }
 }

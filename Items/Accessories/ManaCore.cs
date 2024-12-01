@@ -1,13 +1,13 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using PostLunarAcc.Items.Ingredients;
+using PostLunarAcc.Rarity;
 using System;
+using System.Collections.Generic;
+using Terraria;
 using Terraria.Graphics.Shaders;
 using Terraria.ID;
-using Terraria;
 using Terraria.ModLoader;
-using PostLunarAcc.Rarity;
-using Microsoft.Xna.Framework;
-using PostLunarAcc.Items.Ingredients;
-using System.Collections.Generic;
 
 namespace PostLunarAcc.Items.Accessories
 {
@@ -42,7 +42,6 @@ namespace PostLunarAcc.Items.Accessories
 
         public override void SetStaticDefaults()
         {
-            ItemID.Sets.ItemIconPulse[Item.type] = true;
             ItemID.Sets.ItemNoGravity[Item.type] = true;
         }
 

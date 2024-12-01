@@ -1,7 +1,6 @@
 ﻿global using static PostLunarAcc.HelperStats;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System.ComponentModel.DataAnnotations.Schema;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;

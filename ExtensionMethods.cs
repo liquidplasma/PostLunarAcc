@@ -476,7 +476,7 @@ namespace PostLunarAcc
         /// </summary>
         /// <param name="player"></param>
         /// <param name="idlePosition"></param>
-        public static void TeleportToOrigin(this Projectile proj, Player player, Vector2 idlePosition, int dustType)
+        public static void TeleportTo(this Projectile proj, Player player, Vector2 idlePosition, int dustType)
         {
             proj.position = idlePosition;
             proj.velocity *= 0.1f;

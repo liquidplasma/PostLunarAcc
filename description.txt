@@ -1,1 +1,2 @@
-Modify this file with a description of your mod.
+Adds 4 powerful post-Moon Lord accessories.
+Moon lord now drops a specific material you'll need to craft the accessories

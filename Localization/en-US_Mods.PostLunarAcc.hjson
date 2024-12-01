@@ -1,8 +1,9 @@
 Items: {
 	HolyKnightRelic: {
-		DisplayName: Holy Knight Relic
+		DisplayName: Lunar Retaliation Sigil
 		Tooltip:
 			'''
+			[c/327DFF:Lunar Item]
 			Boosts stats: [c/32AD09:+200] health, [c/32AD09:+20] defense, and [c/32AD09:+10] life regeneration
 			Gain [c/32AD09:+25] defense for each alive ally on your team
 			After taking [c/EB3434:300] damage (pre-defense), [c/EB9234:retaliate] with [c/EB9234:3] spears, 
@@ -11,9 +12,10 @@ Items: {
 	}
 
 	ManaCore: {
-		DisplayName: Mana Core
+		DisplayName: Lunar Overload Core
 		Tooltip:
 			'''
+			[c/327DFF:Lunar Item]
 			Converts all but [c/32AD09:20] mana into health
 			Grants bonuses based on the mana converted:
 			[c/32AD09:50%] as flat magic weapon damage
@@ -25,7 +27,7 @@ Items: {
 
 	MoonFragment: {
 		DisplayName: Moon Fragment
-		Tooltip: ""
+		Tooltip: "[c/327DFF:Lunar Item]"
 	}
 
 	PaladinBar: {
@@ -34,7 +36,7 @@ Items: {
 	}
 
 	RangedLunar: {
-		DisplayName: God Eye
+		DisplayName: Lunar Burst Module
 		Tooltip:
 			'''
 			[c/327DFF:Lunar Item]
@@ -46,11 +48,12 @@ Items: {
 	}
 
 	SoulbindingAmulet: {
-		DisplayName: Soulbinding Amulet
+		DisplayName: Lunar Wraith Charm
 		Tooltip: ""
 		TooltipSmall:
 			'''
 			[c/327DFF:Lunar Item]
+			Boosts stats: [c/32AD09:+3] max minions, [c/32AD09:+25%] summon damage, whips now [c/32AD09:auto attack], [c/32AD09:+25%] whip range
 			Hitting enemies with summon damage applies [c/EB9234:Soulbound], marking them to release a soul on death
 			Summons a wraith that consumes souls to heal you and attack Soulbound enemies with increased damage.
 			[c/EB9234:Hold shift for more info]
@@ -58,8 +61,9 @@ Items: {
 		TooltipBig:
 			'''
 			[c/327DFF:Lunar Item]
+			Boosts stats: [c/32AD09:+3] max minions, [c/32AD09:+25%] summon damage, whips now [c/32AD09:auto attack], [c/32AD09:+25%] whip range
 			Hitting enemies with summon damage applies [c/EB9234:Soulbound], marking them to release a soul on death
-			Summons a wraith that consumes souls, healing [c/32AD09:20] health per soul and attacking [c/EB9234:Soulbound] enemies for [c/EB3434:75%]% + [c/EB3434:2%] per soul damage up to [c/EB3434:275%]
+			Summons a wraith that consumes souls, healing [c/32AD09:20] health per soul and attacking [c/EB9234:Soulbound] enemies for [c/EB3434:75%] + [c/EB3434:2%] per soul damage up to [c/EB3434:475%]
 			'''
 		SoulsConsumed: Consumed souls: [c/EB9234:{0}] = Total damage: [c/EB3434:{1}%]
 	}
