@@ -11,29 +11,6 @@ using Terraria.ModLoader;
 
 namespace PostLunarAcc.Items.Accessories
 {
-    internal class ManaCoreModPlayer : ModPlayer
-    {
-        public bool ManaCoreActive;
-
-        public override void ResetEffects()
-        {
-            ManaCoreActive = false;
-        }
-
-        public override void PostUpdateMiscEffects()
-        {
-            if (ManaCoreActive)
-            {
-                int flatDamageInc = Player.statManaMax2;
-                Player.GetDamage(DamageClass.Magic).Flat += flatDamageInc * 0.5f;
-                Player.statDefense += (int)(flatDamageInc * 0.15);
-                Player.statManaMax2 = 20;
-                Player.statLifeMax2 += flatDamageInc;
-                Player.lifeRegen += flatDamageInc / 12;
-            }
-        }
-    }
-
     internal class ManaCore : ModItem
     {
         private float actualsize;
@@ -57,6 +34,13 @@ namespace PostLunarAcc.Items.Accessories
 
         public override void UpdateAccessory(Player player, bool hideVisual)
         {
+            player.manaCost *= 0.00001f;
+            int flatDamageInc = player.statManaMax2;
+            player.GetDamage(DamageClass.Magic).Flat += flatDamageInc * 0.5f;
+            player.statDefense += (int)(flatDamageInc * 0.15);
+            player.statManaMax2 = 20;
+            player.statLifeMax2 += flatDamageInc;
+            player.lifeRegen += flatDamageInc / 12;
             player.manaFlower = true;
             if (!hideVisual)
             {
@@ -103,13 +87,6 @@ namespace PostLunarAcc.Items.Accessories
             actualsize = GeometryObject.IncreaseDecrease(0.005f);
             scale = Math.Abs(actualsize);
             return true;
-        }
-
-        public override void UpdateEquip(Player player)
-        {
-            player.GetModPlayer<ManaCoreModPlayer>().ManaCoreActive = true;
-            player.manaCost *= 0.00001f;
-            base.UpdateEquip(player);
         }
 
         public override void AddRecipes()
