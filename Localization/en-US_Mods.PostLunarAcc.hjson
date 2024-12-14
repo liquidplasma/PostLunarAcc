@@ -32,7 +32,7 @@ Items: {
 
 	PaladinBar: {
 		DisplayName: Paladin Bar
-		Tooltip: ""
+		Tooltip: "Dropped by Paladins in the Hardmode Dungeon"
 	}
 
 	RangedLunar: {
@@ -53,7 +53,7 @@ Items: {
 		TooltipSmall:
 			'''
 			[c/327DFF:Lunar Item]
-			Boosts stats: [c/32AD09:+3] max minions, [c/32AD09:+25%] summon damage, whips now [c/32AD09:auto attack], [c/32AD09:+25%] whip range
+			Boosts stats: [c/32AD09:+3] max minions, [c/32AD09:+25%] summon damage, whip range and attack speed
 			Hitting enemies with summon damage applies [c/EB9234:Soulbound], marking them to release a soul on death
 			Summons a wraith that consumes souls to heal you and attack Soulbound enemies with increased damage.
 			[c/EB9234:Hold shift for more info]
@@ -61,7 +61,7 @@ Items: {
 		TooltipBig:
 			'''
 			[c/327DFF:Lunar Item]
-			Boosts stats: [c/32AD09:+3] max minions, [c/32AD09:+25%] summon damage, whips now [c/32AD09:auto attack], [c/32AD09:+25%] whip range
+			Boosts stats: [c/32AD09:+3] max minions, [c/32AD09:+25%] summon damage, whip range and attack speed
 			Hitting enemies with summon damage applies [c/EB9234:Soulbound], marking them to release a soul on death
 			Summons a wraith that consumes souls, healing [c/32AD09:20] health per soul and attacking [c/EB9234:Soulbound] enemies for [c/EB3434:75%] + [c/EB3434:2%] per soul damage up to [c/EB3434:475%]
 			'''

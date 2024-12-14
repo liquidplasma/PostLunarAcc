@@ -160,19 +160,24 @@ namespace PostLunarAcc.Projectiles
                 {
                     if (target != null && target.active)
                     {
-                        if (Player.whoAmI == Main.myPlayer)
+                        if (target.friendly)
                         {
-                            int damage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(TrackStats.SoulboundItemInstance.damage);
-                            Vector2 position = Projectile.position + Projectile.Size * Main.rand.NextFloat();
-                            Vector2 velocity = Projectile.Center.DirectionFrom(target.Center).RotatedByRandom(MathHelper.ToRadians(60)) * 5f;
-                            Projectile proj = Projectile.NewProjectileDirect(Projectile.GetSource_FromThis(), position, velocity, ModContent.ProjectileType<HelperWraithShot>(), (int)(damage * (0.75f + TrackStats.SoulsConsumed / 50f)), 4f, ai0: target.whoAmI);
+                            TrackStats.SoulboundNPCs.Remove(target);
+                            continue;
                         }
+
+                        int damage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(TrackStats.SoulboundItemInstance.damage);
+                        Vector2 position = Projectile.position + Projectile.Size * Main.rand.NextFloat();
+                        Vector2 velocity = Projectile.Center.DirectionFrom(target.Center).RotatedByRandom(MathHelper.ToRadians(60)) * 5f;
+                        if (Player.whoAmI == Main.myPlayer)
+                            Projectile.NewProjectileDirect(Projectile.GetSource_FromThis(), position, velocity, ModContent.ProjectileType<HelperWraithShot>(), (int)(damage * (0.75f + TrackStats.SoulsConsumed / 50f)), 4f, ai0: target.whoAmI);
+
                         attacked = true;
                     }
                 }
                 if (attacked)
                 {
-                    Projectile.velocity += Utils.RandomVector2(Main.rand, -4, 4);
+                    Projectile.velocity += Utils.RandomVector2(Main.rand, -5, 5);
                     SoundEngine.PlaySound(SoundID.Item8, Projectile.Center);
                     Projectile.netUpdate = true;
                 }
