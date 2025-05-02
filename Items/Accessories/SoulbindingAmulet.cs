@@ -44,6 +44,7 @@ namespace PostLunarAcc.Items.Accessories
             player.GetModPlayer<HelperWraithTracking>().SoulboundItemInstance = Item;
             player.maxMinions += 3;
             player.GetDamage(DamageClass.Summon) += 0.25f;
+            player.GetDamage(DamageClass.SummonMeleeSpeed) += 0.25f;
             player.whipRangeMultiplier += 0.25f;
             player.GetAttackSpeed(DamageClass.SummonMeleeSpeed) += 0.25f;
             player.GetModPlayer<HelperWraithTracking>().soulbindingActive = true;

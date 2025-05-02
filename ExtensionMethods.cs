@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PostLunarAcc.Items.Accessories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,6 +80,11 @@ namespace PostLunarAcc
                         Language.GetTextValue(text)
                     ).ToArray()), color);
             }
+        }
+
+        public static LunarSovereign Sovereign(this Player player)
+        {
+            return player.GetModPlayer<LunarSovereign>();
         }
 
         /// <summary>

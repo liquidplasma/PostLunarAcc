@@ -1,6 +1,5 @@
-Adds 4 powerful post-Moon Lord accessories.
+Adds 5 powerful post-Moon Lord accessories.
 Moon lord now drops a specific material you'll need to craft the accessories
 
 Changelog:	
-	- Fixed a bug with Wraith targetting
-	- Change whip auto attack to +25% whip speed
+	- Fix burst module damaging invincible NPCs

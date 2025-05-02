@@ -17,7 +17,7 @@ namespace PostLunarAcc
     {
         public bool toExplode, soulboundActive;
 
-        public int lastHitDamage, timesHit, debuffCooldown, cooldownTimer, coolDownLimit;
+        public int lastHitDamage, timesHit, debuffCooldown, cooldownTimer, coolDownLimit, sovereignHits;
 
         private float soulbouldRot;
 
@@ -30,7 +30,10 @@ namespace PostLunarAcc
         private Texture2D SoulBound => ModContent.Request<Texture2D>("PostLunarAcc/Assets/SoulBound", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value;
 
         public override bool InstancePerEntity => true;
-
+        public override bool AppliesToEntity(NPC entity, bool lateInstantiation)
+        {
+            return entity.CanBeChasedBy();
+        }
         public override void UpdateLifeRegen(NPC npc, ref int damage)
         {
             if (toExplode && timesHit > 0)
@@ -54,6 +57,24 @@ namespace PostLunarAcc
             if (timesHit < 0)
                 timesHit = 0;
             base.UpdateLifeRegen(npc, ref damage);
+        }
+
+        public override void ModifyIncomingHit(NPC npc, ref NPC.HitModifiers modifiers)
+        {
+            if (sovereignHits > 5)
+                sovereignHits = 5;
+            if (sovereignHits > 0 && (modifiers.DamageType == DamageClass.Melee || modifiers.DamageType == DamageClass.MeleeNoSpeed))
+            {
+                float increase = (sovereignHits * 0.05f);
+                modifiers.FinalDamage += increase;
+                npc.defDefense = npc.defense - sovereignHits * 10;
+            }
+            base.ModifyIncomingHit(npc, ref modifiers);
+        }
+
+        public override void AI(NPC npc)
+        {
+            base.AI(npc);
         }
 
         public override void PostDraw(NPC npc, SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor)
@@ -95,7 +116,7 @@ namespace PostLunarAcc
 
         public override void DrawEffects(NPC npc, ref Color drawColor)
         {
-            if (toExplode && !npc.friendly)
+            if (toExplode)
             {
                 Lighting.AddLight(npc.Center, Color.DarkRed.ToVector3() * 0.5f);
                 for (int i = 0; i < 3; i++)
@@ -107,8 +128,20 @@ namespace PostLunarAcc
                     dusty.noGravity = true;
                 }
             }
-            if (soulboundActive && !npc.friendly)
+            if (soulboundActive)
                 Lighting.AddLight(npc.Center, Color.FloralWhite.ToVector3() * 0.5f);
+            if (sovereignHits > 0)
+            {
+                Lighting.AddLight(npc.Center, Color.Gold.ToVector3() * 0.5f);
+                for (int i = 0; i < 1; i++)
+                {
+                    Dust dusty = Dust.NewDustDirect(npc.position, npc.width, npc.height, DustID.SolarFlare);
+                    dusty.velocity = Utils.RandomVector2(Main.rand, -6, 6);
+                    dusty.color = Color.Gold;
+                    dusty.scale = 1.1f;
+                    dusty.noGravity = true;
+                }
+            }
         }
 
         public override void OnKill(NPC npc)
@@ -125,7 +158,7 @@ namespace PostLunarAcc
                     instance.Write7BitEncodedInt(Player.whoAmI);
                     instance.Send();
                 }
-                if (Player != null && Player.GetModPlayer<RangerLunarModplayer>().active && toExplode && npc.CanBeChasedBy())
+                if (Player != null && Player.GetModPlayer<RangerLunarModplayer>().active && toExplode)
                 {
                     var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
                     NPC.HitInfo explodeDamage = new()
@@ -136,7 +169,7 @@ namespace PostLunarAcc
                     };
                     foreach (NPC nearby in Main.ActiveNPCs)
                     {
-                        if (!nearby.friendly && nearby.whoAmI != npc.whoAmI && nearby.Distance(npc.Center) <= (npc.height + npc.width) * 2)
+                        if (nearby.CanBeChasedBy() && !nearby.friendly && nearby.whoAmI != npc.whoAmI && nearby.Distance(npc.Center) <= (npc.height + npc.width) * 2)
                         {
                             nearby.StrikeNPC(explodeDamage);
                             ExtensionMethods.CreateCombatText(nearby, Color.Red, explodeDamage.Damage.ToString("0"));
@@ -151,19 +184,27 @@ namespace PostLunarAcc
                     instance.Send();
                     toExplode = false;
                 }
+                if (sovereignHits > 0)
+                {
+                    var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
+                    instance.Write((byte)PostLunarAcc.PacketType.SovereignClear);
+                    instance.Write7BitEncodedInt(npc.whoAmI);
+                    instance.Send();
+                    sovereignHits = 0;
+                }
                 return;
             }
             else
             {
                 Player Player = Main.player[npc.lastInteraction];
-                if (Player != null && Player.GetModPlayer<HelperWraithTracking>().soulbindingActive && soulboundActive && npc.CanBeChasedBy())
+                if (Player != null && Player.GetModPlayer<HelperWraithTracking>().soulbindingActive && soulboundActive)
                 {
                     if (Main.netMode != NetmodeID.MultiplayerClient)
                         Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.position + npc.Size * Main.rand.NextFloat(), Vector2.UnitY * -2f, ModContent.ProjectileType<HelperWraithPellets>(), 0, 0, Player.whoAmI);
                     Player.GetModPlayer<HelperWraithTracking>().SoulboundNPCs.Remove(npc);
                     soulboundActive = false;
                 }
-                if (Player != null && toExplode && npc.CanBeChasedBy())
+                if (Player != null && toExplode)
                 {
                     NPC.HitInfo explodeDamage = new()
                     {
@@ -173,7 +214,7 @@ namespace PostLunarAcc
                     };
                     foreach (NPC nearby in Main.ActiveNPCs)
                     {
-                        if (!nearby.friendly && nearby.whoAmI != npc.whoAmI && nearby.Distance(npc.Center) <= (npc.height + npc.width) * 2)
+                        if (nearby.CanBeChasedBy() && !nearby.friendly && nearby.whoAmI != npc.whoAmI && nearby.Distance(npc.Center) <= (npc.height + npc.width) * 2)
                         {
                             nearby.StrikeNPC(explodeDamage);
                             ExtensionMethods.CreateCombatText(nearby, Color.Red, explodeDamage.Damage.ToString("0"));
@@ -188,6 +229,8 @@ namespace PostLunarAcc
                         Projectile.NewProjectileDirect(npc.GetSource_Death(), npc.Center + new Vector2(0, -64), Vector2.Zero, ProjectileID.DD2ExplosiveTrapT3Explosion, 0, 0, Player.whoAmI);
                     toExplode = false;
                 }
+                if (sovereignHits > 0)
+                    sovereignHits = 0;
                 return;
             }
         }

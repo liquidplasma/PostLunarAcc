@@ -284,10 +284,7 @@ namespace PostLunarAcc.Projectiles
             base.SetDefaults();
         }
 
-        public override bool? CanHitNPC(NPC target)
-        {
-            return Target != null && Target == target;
-        }
+        public override bool? CanHitNPC(NPC target) => Target != null && Target == target;
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {

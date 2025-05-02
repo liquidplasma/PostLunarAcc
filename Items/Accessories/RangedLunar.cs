@@ -44,7 +44,7 @@ namespace PostLunarAcc.Items.Accessories
                 };
                 foreach (NPC closeNPC in Main.ActiveNPCs)
                 {
-                    if (!closeNPC.friendly && closeNPC.Center.Distance(proj.Center) <= target.width * 1.5f)
+                    if (closeNPC.CanBeChasedBy() && !closeNPC.friendly && closeNPC.Center.Distance(proj.Center) <= target.width * 1.5f)
                     {
                         closeNPC.StrikeNPC(hitAttack);
                         Color color = hit.Crit ? new Color(Color.Red.R, Color.Red.G + 45, Color.Red.B + 45) : Color.Red;

@@ -82,7 +82,13 @@ namespace PostLunarAcc
 
             SoulboundActivationServer,
 
-            SoulboundActivationPlayers
+            SoulboundActivationPlayers,
+
+            SovereignAddServer,
+
+            SovereignAddClient,
+
+            SovereignClear
         }
 
         public override void HandlePacket(BinaryReader reader, int whoAmI)
@@ -186,6 +192,45 @@ namespace PostLunarAcc
                             if (Main.LocalPlayer.TryGetModPlayer(out HelperWraithTracking result))
                                 result.SoulboundNPCs.Remove(target);
                             target.GetGlobalNPC<PostLunarGlobalNPC>().soulboundActive = false;
+                        }
+                        break;
+                    }
+                case (byte)PacketType.SovereignAddServer:
+                    {
+                        int targetIndex = reader.Read7BitEncodedInt();
+                        int ignoreClient = reader.Read7BitEncodedInt();
+                        if (Main.npc.IndexInRange(targetIndex))
+                        {
+                            NPC target = Main.npc[targetIndex];
+
+                            target.GetGlobalNPC<PostLunarGlobalNPC>().sovereignHits++;
+                            if (Main.dedServ)
+                            {
+                                var instance = ModContent.GetInstance<PostLunarAcc>().GetPacket();
+                                instance.Write((byte)PacketType.SovereignAddClient);
+                                instance.Write7BitEncodedInt(target.whoAmI);
+                                instance.Send(ignoreClient: ignoreClient);
+                            }
+                        }
+                        break;
+                    }
+                case (byte)PacketType.SovereignAddClient:
+                    {
+                        int targetIndex = reader.Read7BitEncodedInt();
+                        if (Main.npc.IndexInRange(targetIndex))
+                        {
+                            NPC target = Main.npc[targetIndex];
+                            target.GetGlobalNPC<PostLunarGlobalNPC>().sovereignHits++;
+                        }
+                        break;
+                    }
+                case (byte)PacketType.SovereignClear:
+                    {
+                        int targetIndex = reader.Read7BitEncodedInt();
+                        if (Main.npc.IndexInRange(targetIndex))
+                        {
+                            NPC target = Main.npc[targetIndex];
+                            target.GetGlobalNPC<PostLunarGlobalNPC>().sovereignHits = 0;
                         }
                         break;
                     }

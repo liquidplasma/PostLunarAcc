@@ -32,7 +32,7 @@ Items: {
 
 	PaladinBar: {
 		DisplayName: Paladin Bar
-		Tooltip: "Dropped by Paladins in the Hardmode Dungeon"
+		Tooltip: Dropped by Paladins in the Hardmode Dungeon
 	}
 
 	RangedLunar: {
@@ -66,6 +66,18 @@ Items: {
 			Summons a wraith that consumes souls, healing [c/32AD09:20] health per soul and attacking [c/EB9234:Soulbound] enemies for [c/EB3434:75%] + [c/EB3434:2%] per soul damage up to [c/EB3434:475%]
 			'''
 		SoulsConsumed: Consumed souls: [c/EB9234:{0}] = Total damage: [c/EB3434:{1}%]
+	}
+
+	LunarSovereignFist: {
+		DisplayName: Lunar Sovereign Fist
+		Tooltip:
+			'''
+			[c/327DFF:Lunar Item]
+			Boosts stats: [c/32AD09:+25%] melee damage and speed, [c/32AD09:+20%] melee critical strike chance
+			Each melee hit on an enemy reduces its melee damage resistance by [c/EB3434:5%], up to [c/EB3434:25%].
+			Subsequent hits further decrease enemy defense by [c/EB3434:10], up to [c/EB3434:50].
+			Causes a mini explosion on melee hits, dealing [c/EB3434:75%] of the original damage.
+			'''
 	}
 }
 
